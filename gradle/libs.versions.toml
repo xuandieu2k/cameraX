@@ -1,0 +1,139 @@
+[versions]
+agp = "8.6.0"
+cameraCore = "1.3.4"
+kotlin = "1.9.0"
+coreKtx = "1.13.1"
+appcompat = "1.7.0"
+material = "1.12.0"
+hilt = "2.52"
+retrofit = "2.9.0"
+okhttp = "4.11.0"
+glide = "4.16.0"
+room = "2.6.1"
+coroutines = "1.7.3"
+lifecycle-viewmodel-ktx = "2.5.1"
+activity-ktx = "1.6.1"
+flexbox = "3.0.0"
+lottie = "5.2.0"
+motion-toast = "1.4"
+immersionbar = "3.2.2"
+timber = "5.0.1"
+xxpermissions = "12.3"
+titlebar = "9.2"
+toastutils = "9.5"
+gson = "2.8.8"
+gsonfactory = "5.2"
+shapeview = "6.0"
+aspectjrt = "1.9.6"
+photoview = "2.3.0"
+bugly = "3.4.4"
+nativecrashreport = "3.9.2"
+refreshlayout = "2.0.5"
+circleindicator = "2.1.6"
+mmkv = "1.2.10"
+leakcanary = "2.7"
+colorpickerpreference = "2.0.6"
+paging3 = "3.2.1"
+
+# Testing
+junit = "4.13.2"
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+mockito = "5.14.1"
+mockito-inline = "5.2.0"
+mockito-kotlin = "5.4.0"
+core-testing = "2.1.0"
+kotlin-coroutines-test = "1.8.1"
+firebaseCrashlytics = "19.2.1"
+googleGmsGoogleServices = "4.4.2"
+googleFirebaseCrashlytics = "3.0.2"
+firebaseMessaging = "24.0.3"
+
+
+
+[libraries]
+# Testing
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
+mockito-inline = { group = "org.mockito", name = "mockito-inline", version.ref = "mockito-inline" }
+mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockito-kotlin" }
+core-testing = { group = "androidx.arch.core", name = "core-testing", version.ref = "core-testing" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlin-coroutines-test" }
+
+# Core
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+# Hilt
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+# Retrofit
+retrofit2 = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit2-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+# OkHttp - Support log
+okhttp3 = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+okhttp3-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+# Glide
+glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glide" }
+# Room
+room = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
+# Coroutines
+coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version = "coroutines" }
+coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+# ViewmodelScope
+lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle-viewmodel-ktx" }
+# Activity
+activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity-ktx" }
+# Flexbox
+flexbox = { group = "com.google.android.flexbox", name = "flexbox", version.ref = "flexbox" }
+# Lottie
+lottie = { group = "com.airbnb.android", name = "lottie", version.ref = "lottie" }
+# MotionToast
+# immersionbar
+immersionbar = { group = "com.geyifeng.immersionbar", name = "immersionbar", version.ref = "immersionbar" }
+immersionbar-ktx = { group = "com.geyifeng.immersionbar", name = "immersionbar-ktx", version.ref = "immersionbar" }
+immersionbar-components = { group = "com.geyifeng.immersionbar", name = "immersionbar-components", version.ref = "immersionbar" }
+# Timber
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+#Support
+xxpermissions = { group = "com.github.getActivity", name = "XXPermissions", version.ref = "xxpermissions" }
+titlebar = { group = "com.github.getActivity", name = "TitleBar", version.ref = "titlebar" }
+toastutils = { group = "com.github.getActivity", name = "ToastUtils", version.ref = "toastutils" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+gsonfactory = { group = "com.github.getActivity", name = "GsonFactory", version.ref = "gsonfactory" }
+shapeview = { group = "com.github.getActivity", name = "ShapeView", version.ref = "shapeview" }
+aspectjrt = { group = "org.aspectj", name = "aspectjrt", version.ref = "aspectjrt" }
+photoview = { group = "com.github.Baseflow", name = "PhotoView", version.ref = "photoview" }
+bugly = { group = "com.tencent.bugly", name = "crashreport", version.ref = "bugly" }
+nativecrashreport = { group = "com.tencent.bugly", name = "nativecrashreport", version.ref = "nativecrashreport" }
+#refreshlayout = { group = "com.scwang.smart", name = "refresh-layout-kernel", version.ref = "refreshlayout" }
+#refreshheader = { group = "com.scwang.smart", name = "refresh-header-material", version.ref = "refreshlayout" }
+circleindicator = { group = "me.relex", name = "circleindicator", version.ref = "circleindicator" }
+mmkv = { group = "com.tencent", name = "mmkv-static", version.ref = "mmkv" }
+leakcanary = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics", version.ref = "firebaseCrashlytics" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
+# colorpickerpreference
+colorpickerpreference = { group = "com.github.skydoves", name = "colorpickerpreference", version.ref = "colorpickerpreference" }
+#
+paging = {group = "androidx.paging", name="paging-runtime", version.ref="paging3"}
+
+# Camerax
+
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraCore" }
+androidx-camera-video = { module = "androidx.camera:camera-video", version.ref = "cameraCore" }
+androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "cameraCore" }
+androidx-camera-extensions = { module = "androidx.camera:camera-extensions", version.ref = "cameraCore" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+android-library = { id = "com.android.library", version.ref = "agp" }

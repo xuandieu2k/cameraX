@@ -1,0 +1,111 @@
+package vn.xdeuhug.test
+
+import android.annotation.SuppressLint
+import android.app.Service
+import android.content.Intent
+import android.graphics.PixelFormat
+import android.os.IBinder
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.WindowManager
+import vn.xdeuhug.test.databinding.LayoutChatBinding
+
+/**
+ * @Author: NGUYEN XUAN DIEU
+ * @Date: 04 / 12 / 2024
+ */
+class ChatService : Service() {
+
+    private val windowManager: WindowManager by lazy {
+        getSystemService(WINDOW_SERVICE) as WindowManager
+    }
+
+    private val chatHeadView: LayoutChatBinding by lazy {
+        LayoutChatBinding.inflate(LayoutInflater.from(this))
+    }
+
+    override fun onBind(p0: Intent?): IBinder? = null
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onCreate() {
+        super.onCreate()
+
+        // add chat view to window
+        var params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE ,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            // default pos of chat view
+            gravity = Gravity.TOP or Gravity.LEFT
+            x = 0
+            y = 100
+        }
+        windowManager.addView(chatHeadView.root, params)
+        chatHeadView.apply {
+            chatHeadView.buttonClose.setOnClickListener {
+                stopSelf()
+            }
+
+
+            chatHeadView.imageChat.setOnTouchListener(object : View.OnTouchListener{
+                override fun onTouch(p0: View?, motionEvent: MotionEvent): Boolean {
+                    var lastAction: Int? = null
+                    var initialX = 0
+                    var initialY = 0
+                    var initialTouchX = 0f
+                    var initialTouchY = 0f
+
+                    when(motionEvent.action) {
+                        MotionEvent.ACTION_DOWN -> {
+                            //remember the initial position.
+                            initialX = params.x
+                            initialY = params.y
+
+                            //get the touch location
+                            initialTouchX = motionEvent.rawX
+                            initialTouchY = motionEvent.rawY
+
+                            lastAction = motionEvent.action
+                            return true
+                        }
+                        MotionEvent.ACTION_UP -> {
+                            if (lastAction == MotionEvent.ACTION_DOWN) {
+                                val intent = Intent(this@ChatService, MainActivity::class.java)
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(intent)
+
+                                //close the service and remove the chat heads
+                                stopSelf()
+                            }
+                            lastAction = motionEvent.action
+                            return true
+                        }
+                        MotionEvent.ACTION_MOVE -> {
+                            //Calculate the X and Y coordinates of the view.
+                            params.x = (initialX + motionEvent.rawX - initialTouchX).toInt()
+                            params.y = (initialY + motionEvent.rawY - initialTouchY).toInt()
+
+                            //Update the layout with new X & Y coordinate
+                            windowManager.updateViewLayout(chatHeadView.root, params)
+                            lastAction = motionEvent.action
+                            return true
+                        }
+                    }
+                    return false
+                }
+
+            })
+        }
+
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        windowManager.removeViewImmediate(chatHeadView.root)
+    }
+}
