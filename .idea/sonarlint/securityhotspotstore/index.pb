@@ -13,14 +13,10 @@ A
 gradle.properties,2\a\2afbb999f001938c88fa43fc2ef52abf0f8213e4
 F
 app/proguard-rules.pro,9\e\9e08934d811afe28fbc77aaa3c0d747b94348db9
-z
-Japp/src/main/java/vn/xdeuhug/camerax/data/service/VideoRecordingService.kt,8\4\84d60758bc8b56b953c169bad2aebd5e60626399
 h
 8app/src/main/java/vn/xdeuhug/camerax/di/ServiceModule.kt,b\3\b3be65f8d29d715f8bf46609de39ca38e1b82bdb
 €
 Papp/src/main/java/vn/xdeuhug/camerax/presentation/view/VideoRecordingActivity.kt,e\e\ee9985a0034c53ba073edcc82699268a51e547ef
-~
-Napp/src/main/java/vn/xdeuhug/camerax/data/connection/VideoServiceConnection.kt,9\8\984d6079c67aebb665fd116460c1cd5e3ece59ad
 E
 app/gradle.properties,9\4\94e3e10af8bb8062a0d4e9b8f6ce8b7daeeb814f
 h
@@ -37,8 +33,6 @@ p
 Vapp/src/main/java/vn/xdeuhug/camerax/presentation/viewmodel/VideoRecordingViewModel.kt,c\f\cfab436552f09739837be4830ab67e1d94f964b6
 |
 Lapp/src/main/java/vn/xdeuhug/camerax/domain/usecase/VideoRecordingUseCase.kt,6\f\6fe45d12e8b386680c7c2b109ede609dd8025bfe
-{
-Kapp/src/main/java/vn/xdeuhug/camerax/data/repository/VideoRepositoryImpl.kt,4\5\45a7d8c764cad8867cd03153ee9c0327eb9d9440
 ‚
 Rapp/src/main/java/vn/xdeuhug/camerax/domain/repository/VideoRecordingRepository.kt,1\7\1799993580dee2156dc51b22883ec4a7140b9545
 x
@@ -59,3 +53,5 @@ q
 Aapp/src/main/java/vn/xdeuhug/camerax/data/source/CameraManager.kt,1\6\16fdba7459159098bb3ddde5f6346d3a3bd6a67b
 f
 6app/src/main/java/vn/xdeuhug/camerax/AppApplication.kt,b\7\b7c584c945591b75ca110385823fe78c3d4623ba
+9
+	README.md,8\e\8ec9a00bfd09b3190ac6b22251dbb1aa95a0579d
