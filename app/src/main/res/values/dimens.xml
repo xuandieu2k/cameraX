@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--Default dividing line size -->
+    <dimen name="line_size">1px</dimen>
+    <!-- Default button fillet size -->
+    <dimen name="button_circle_size">999dp</dimen>
+    <!-- Common dialog box fillet size -->
+    <dimen name="dialog_ui_round_size">15dp</dimen>
+</resources>

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,26 +8,48 @@ plugins {
 }
 
 android {
-    namespace = "vn.xdeuhug.test"
+    namespace = "vn.xdeuhug.camerax"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "vn.xdeuhug.test"
+        applicationId = "vn.xdeuhug.camerax"
         minSdk = 21
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        vectorDrawables.useSupportLibrary = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Load the keystore properties
+    val keystoreProperties = Properties()
+    val keystoreFile = project(":app").file("gradle.properties")
+    if (keystoreFile.exists()) {
+        keystoreProperties.load(keystoreFile.inputStream())
+    }
+
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["KeyAlias"] as String?
+            keyPassword = keystoreProperties["KeyPassword"] as String?
+            storeFile = (keystoreProperties["StoreFile"] as String?)?.let { file(it) }
+            storePassword = keystoreProperties["StorePassword"] as String?
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
+        }
+
+        debug {
+            applicationIdSuffix = ".debug"
+            isDebuggable = true
         }
     }
     compileOptions {

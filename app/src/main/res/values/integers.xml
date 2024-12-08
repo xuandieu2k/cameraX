@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Activity transition animation time -->
+    <integer name="activity_anim_duration">200</integer>
+
+    <!-- Length of SMS verification code -->
+    <integer name="sms_code_length">4</integer>
+</resources>

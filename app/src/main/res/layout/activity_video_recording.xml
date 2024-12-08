@@ -5,80 +5,70 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".presentation.ui.VideoRecordingActivity">
+    android:background="@color/black"
+    tools:context=".presentation.view.VideoRecordingActivity">
 
     <!-- Preview view -->
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_margin="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/controlPanel"
+        app:layout_constraintBottom_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Control Panel -->
-    <LinearLayout
-        android:id="@+id/controlPanel"
-        android:layout_width="0dp"
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/tvRecordingTimer"
+        style="@style/TextRecordingTimer"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="#AA000000"
-        android:padding="8dp"
+        android:layout_marginBottom="@dimen/dp_2"
+        tools:text="00:00"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/llBottom"/>
+
+    <LinearLayout
+        android:id="@+id/llBottom"
+        android:paddingVertical="@dimen/dp_8"
+        android:paddingHorizontal="@dimen/dp_32"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Flash toggle -->
-        <Switch
-            android:id="@+id/flashToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Flash"
-            android:textColor="#FFFFFF"
-            android:checked="false" />
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/btnWatchVideo"
+            android:layout_width="@dimen/dp_32"
+            android:layout_height="@dimen/dp_32"
+            android:src="@drawable/logo_camera"/>
 
-        <!-- Quality selector -->
-        <Spinner
-            android:id="@+id/qualitySelector"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:entries="@array/video_quality"
-            android:spinnerMode="dropdown"
-            android:layout_marginTop="8dp" />
+        <View
+            android:layout_width="0dp"
+            android:layout_height="@dimen/dp_1"
+            android:layout_weight="1"/>
 
-        <!-- Timer -->
-        <TextView
-            android:id="@+id/recordingTimer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="00:00"
-            android:textSize="18sp"
-            android:textColor="#FFFFFF"
-            android:layout_marginTop="8dp" />
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/btnStartRecord"
+            android:layout_width="@dimen/dp_56"
+            android:layout_height="@dimen/dp_56"
+            android:src="@drawable/ic_record_off"/>
 
-        <!-- Start and Stop Buttons -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginTop="16dp">
+        <View
+            android:layout_width="0dp"
+            android:layout_height="@dimen/dp_1"
+            android:layout_weight="1"/>
 
-            <Button
-                android:id="@+id/startButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Start"
-                android:layout_marginEnd="8dp" />
-
-            <Button
-                android:id="@+id/stopButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Stop"
-                android:enabled="false" />
-        </LinearLayout>
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/btnSwapCamera"
+            android:layout_width="@dimen/dp_32"
+            android:layout_height="@dimen/dp_32"
+            android:src="@drawable/ic_camera_swap"/>
     </LinearLayout>
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

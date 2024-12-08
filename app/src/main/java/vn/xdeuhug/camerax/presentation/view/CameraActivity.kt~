@@ -1,0 +1,258 @@
+package vn.xdeuhug.camerax.presentation.view
+
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
+import androidx.core.content.ContextCompat
+import dagger.hilt.android.AndroidEntryPoint
+import vn.xdeuhug.camerax.databinding.ActivityVideoRecordingBinding
+import vn.xdeuhug.camerax.presentation.viewmodel.VideoRecordingViewModel
+import java.util.concurrent.ExecutorService
+
+/**
+ * @Author: NGUYEN XUAN DIEU
+ * @Date: 07 / 12 / 2024
+ */
+@AndroidEntryPoint
+class CameraActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityVideoRecordingBinding
+    private val viewModel: VideoRecordingViewModel by viewModels()
+
+    private lateinit var cameraExecutor: ExecutorService
+    private var videoCapture: VideoCapture<Recorder>? = null
+    private var activeRecording: Recording? = null
+    private var isRecording = false
+    private val handler = Handler(Looper.getMainLooper())
+    private var recordingTime = 0
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityVideoRecordingBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        cameraExecutor = Executors.newSingleThreadExecutor()
+
+        if (hasPermissions()) {
+            setupCamera()
+        } else {
+            requestPermissions()
+        }
+
+        setupListeners()
+    }
+
+    private fun setupCamera() {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+            val preview = Preview.Builder().build()
+            preview.setSurfaceProvider(binding.previewView.surfaceProvider)
+
+            val recorder = Recorder.Builder()
+                .setQualitySelector(QualitySelector.from(Quality.FHD))
+                .build()
+            videoCapture = VideoCapture.withOutput(recorder)
+
+            try {
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
+            } catch (e: Exception) {
+                showToast("Camera initialization failed: ${e.message}")
+            }
+        }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun setupListeners() {
+        binding.btnStartRecord.setOnClickListener {
+            if (isRecording) {
+                stopRecording()
+            } else {
+                if (hasPermissions()) {
+                    startRecording()
+                } else {
+                    requestPermissions()
+                }
+            }
+        }
+    }
+
+    private fun startRecording() {
+        val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "video_${System.currentTimeMillis()}.mp4")
+
+        val outputOptions = FileOutputOptions.Builder(file).build()
+
+
+        activeRecording = videoCapture?.output?.prepareRecording(this, outputOptions)
+            ?.apply {
+                if(ContextCompat.checkSelfPermission(
+                        this@VideoRecordingActivity, android.Manifest.permission.RECORD_AUDIO
+                    ) == PackageManager.PERMISSION_GRANTED){
+                    withAudioEnabled()
+                }
+            }
+            ?.start(ContextCompat.getMainExecutor(this)) { recordEvent ->
+                when (recordEvent) {
+                    is VideoRecordEvent.Start -> handleRecordingStarted()
+                    is VideoRecordEvent.Finalize -> handleRecordingFinalized(recordEvent, file)
+                }
+            }
+    }
+
+//    private fun startRecording() {
+//        // Tạo Uri lưu video trong MediaStore
+//        val uri = createVideoFileUri()
+//        if (uri == null) {
+//            Toast.makeText(this, "Failed to create video file", Toast.LENGTH_SHORT).show()
+//            return
+//        }
+//
+//        val outputOptions = MediaStoreOutputOptions.Builder(contentResolver, uri).build()
+//
+//        activeRecording = videoCapture?.output?.prepareRecording(this, outputOptions)
+//            ?.apply {
+//                if (ContextCompat.checkSelfPermission(
+//                        this@VideoRecordingActivity,
+//                        android.Manifest.permission.RECORD_AUDIO
+//                    ) == PackageManager.PERMISSION_GRANTED
+//                ) {
+//                    withAudioEnabled()
+//                }
+//            }
+//            ?.start(ContextCompat.getMainExecutor(this)) { recordEvent ->
+//                when (recordEvent) {
+//                    is VideoRecordEvent.Start -> {
+//                        isRecording = true
+//                        updateRecordingUI()
+//                        startTimer()
+//                    }
+//                    is VideoRecordEvent.Finalize -> {
+//                        isRecording = false
+//                        updateRecordingUI()
+//                        stopTimer()
+//                        if (recordEvent.error == VideoRecordEvent.Finalize.ERROR_NONE) {
+//                            Toast.makeText(this, "Video saved to gallery", Toast.LENGTH_LONG).show()
+//                        } else {
+//                            Toast.makeText(this, "Recording failed: ${recordEvent.error}", Toast.LENGTH_LONG).show()
+//                        }
+//                    }
+//                }
+//            }
+//    }
+
+    private fun createVideoFileUri(): Uri? {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Video.Media.DISPLAY_NAME, "video_${System.currentTimeMillis()}.mp4")
+            put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+            put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/MyAppVideos") // Thư mục Movies/MyAppVideos
+        }
+
+        return contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, contentValues)
+    }
+
+
+    private fun stopRecording() {
+        activeRecording?.stop()
+        activeRecording = null
+    }
+
+    private fun handleRecordingStarted() {
+        isRecording = true
+        updateRecordingUI()
+        startTimer()
+    }
+
+    private fun handleRecordingFinalized(recordEvent: VideoRecordEvent.Finalize, file: File) {
+        isRecording = false
+        updateRecordingUI()
+        stopTimer()
+
+        if (recordEvent.error == VideoRecordEvent.Finalize.ERROR_NONE) {
+            showToast("Video saved: ${file.absolutePath}")
+        } else {
+            showToast("Recording failed: ${recordEvent.error}")
+        }
+    }
+
+    private fun updateRecordingUI() {
+        binding.btnStartRecord.setImageResource(
+            if (!isRecording) R.drawable.ic_recording else R.drawable.ic_record_off
+        )
+    }
+
+    private fun startTimer() {
+        recordingTime = 0
+        handler.post(object : Runnable {
+            override fun run() {
+                recordingTime++
+                binding.tvRecordingTimer.text = String.format("%02d:%02d", recordingTime / 60, recordingTime % 60)
+                handler.postDelayed(this, 1000)
+            }
+        })
+    }
+
+    private fun stopTimer() {
+        handler.removeCallbacksAndMessages(null)
+        binding.tvRecordingTimer.text = "00:00"
+    }
+
+    private fun hasPermissions(): Boolean {
+        val permissions = arrayOf(
+            android.Manifest.permission.CAMERA,
+            android.Manifest.permission.RECORD_AUDIO
+        )
+        return permissions.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    private fun hasAudioPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestPermissions() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(android.Manifest.permission.CAMERA, android.Manifest.permission.RECORD_AUDIO),
+            PERMISSION_REQUEST_CODE
+        )
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                setupCamera()
+            } else {
+                showToast("Permissions are required to record video.")
+            }
+        }
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        Timber.tag("Log File").d(message)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        cameraExecutor.shutdown()
+    }
+
+    companion object {
+        private const val PERMISSION_REQUEST_CODE = 1001
+    }
+}

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Imitation ios switch button -->
+    <declare-styleable name="SwitchButton">
+        <!-- Whether to select -->
+        <attr name="android:checked" />
+        <!-- Whether to disable -->
+        <attr name="android:enabled" />
+    </declare-styleable>
+
+    <!-- Regular expression edit box -->
+    <declare-styleable name="RegexEditText">
+        <!-- Regular input restrictions -->
+        <attr name="inputRegex" format="string" />
+        <!-- Commonly used regular types -->
+        <attr name="regexType" >
+            <!--Mobile phone number (can only start with 1)-->
+            <enum name="mobile" value="0x01" />
+            <!-- Chinese (ordinary Chinese characters) -->
+            <enum name="chinese" value="0x02" />
+            <!-- English (uppercase and lowercase English) -->
+            <enum name="english" value="0x03" />
+            <!-- Numbers (only pure numbers are allowed to be entered) -->
+            <enum name="number" value="0x04" />
+            <!-- Integers (numbers not starting with 0) -->
+            <enum name="count" value="0x05" />
+            <!-- Username (Chinese, English, numbers) -->
+            <enum name="name" value="0x06" />
+            <!-- non-space characters -->
+            <enum name="nonnull" value="0x07" />
+        </attr>
+    </declare-styleable>
+
+    <!-- Setting bar -->
+    <declare-styleable name="SettingBar">
+        <!-- Left -->
+        <attr name="bar_leftText" format="string"/>
+        <attr name="bar_leftTextColor" format="color" />
+        <attr name="bar_leftTextSize" format="dimension" />
+        <attr name="bar_leftTextHint" format="string"/>
+        <attr name="bar_leftDrawable" format="reference" />
+        <attr name="bar_leftDrawablePadding" format="dimension" />
+        <attr name="bar_leftDrawableSize" format="dimension" />
+        <attr name="bar_leftDrawableTint" format="color" />
+        <!-- Right -->
+        <attr name="bar_rightText" format="string" />
+        <attr name="bar_rightTextColor" format="color" />
+        <attr name="bar_rightTextSize" format="dimension" />
+        <attr name="bar_rightTextHint" format="string"/>
+        <attr name="bar_rightDrawable" format="reference" />
+        <attr name="bar_rightDrawablePadding" format="dimension" />
+        <attr name="bar_rightDrawableSize" format="dimension" />
+        <attr name="bar_rightDrawableTint" format="color" />
+        <!-- dividing line -->
+        <attr name="bar_lineVisible" format="boolean" />
+        <attr name="bar_lineDrawable" format="reference|color" />
+        <attr name="bar_lineSize" format="dimension" />
+        <attr name="bar_lineMargin" format="dimension" />
+    </declare-styleable>
+
+    <!-- Button with submit animation -->
+    <declare-styleable name="SubmitButton">
+        <!-- Progress button color -->
+        <attr name="progressColor" format="color" />
+        <!-- Success button color -->
+        <attr name="succeedColor" format="color" />
+        <!-- Error button color -->
+        <attr name="errorColor" format="color" />
+        <!-- Progress bar style -->
+        <attr name="progressStyle" format="enum">
+            <!-- No progress -->
+            <enum name="loading" value="0x00" />
+            <!-- With progress -->
+            <enum name="progress" value="0x01" />
+        </attr>
+    </declare-styleable>
+
+    <!-- Tilt TextView -->
+    <declare-styleable name="SlantedTextView">
+        <attr name="android:text" />
+        <attr name="android:textSize" />
+        <attr name="android:textColor" />
+        <attr name="android:textStyle" />
+        <attr name="android:gravity" />
+        <attr name="android:colorBackground" />
+        <attr name="android:paddingVertical" />
+        <attr name="android:paddingHorizontal" />
+        <!-- Displayed as a triangle -->
+        <attr name="triangle" format="boolean" />
+    </declare-styleable>
+
+    <!-- Custom ViewStub -->
+    <declare-styleable name="CustomViewStub">
+        <!-- layout id -->
+        <attr name="android:layout" />
+    </declare-styleable>
+
+    <!-- Scaled ImageView -->
+    <declare-styleable name="ScaleImageView">
+        <!-- Scaling ratio -->
+        <attr name="scaleRatio" format="float" />
+    </declare-styleable>
+
+    <!-- FrameLayout displayed proportionally -->
+    <declare-styleable name="RatioFrameLayout">
+        <!-- Width to height ratio -->
+        <attr name="sizeRatio" format="string" />
+    </declare-styleable>
+
+    <!-- Support TextView that limits Drawable size -->
+    <declare-styleable name="DrawableTextView">
+        <!-- Drawable width -->
+        <attr name="drawableWidth" format="dimension" />
+        <!-- Drawable height -->
+        <attr name="drawableHeight" format="dimension" />
+    </declare-styleable>
+
+    <!-- Custom scoring control -->
+    <declare-styleable name="SimpleRatingBar">
+        <!-- Current star level -->
+        <attr name="grade" format="float"/>
+        <!-- Total number of stars -->
+        <attr name="gradeCount" format="integer"/>
+        <!-- The width of the star -->
+        <attr name="gradeWidth" format="dimension" />
+        <!-- Height of the star -->
+        <attr name="gradeHeight" format="dimension" />
+        <!-- The space between stars -->
+        <attr name="gradeSpace" format="dimension"/>
+        <!-- Star selection span -->
+        <attr name="gradeStep" format="enum" >
+            <!-- Half a star -->
+            <enum name="half" value="0x00" />
+            <!-- one star -->
+            <enum name="one" value="0x01" />
+        </attr>
+        <!-- Default star icon -->
+        <attr name="normalDrawable" format="reference"/>
+        <!-- Half star icon -->
+        <attr name="halfDrawable" format="reference"/>
+        <!-- Selected star icon -->
+        <attr name="fillDrawable" format="reference"/>
+    </declare-styleable>
+
+    <declare-styleable name="PlayButton">
+        <!-- Line color -->
+        <attr name="pb_lineColor" format="color" />
+        <!-- Line size -->
+        <attr name="pb_lineSize" format="integer" />
+        <!-- animation time -->
+        <attr name="pb_animDuration" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="MaxHeightScrollView">
+        <attr name="maxHeight" format="dimension" />
+    </declare-styleable>
+
+</resources>

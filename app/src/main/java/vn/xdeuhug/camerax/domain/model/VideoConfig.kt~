@@ -1,0 +1,7 @@
+package vn.xdeuhug.camerax.domain.model
+
+/**
+ * @Author: NGUYEN XUAN DIEU
+ * @Date: 07 / 12 / 2024
+ */class VideoConfig {
+}
