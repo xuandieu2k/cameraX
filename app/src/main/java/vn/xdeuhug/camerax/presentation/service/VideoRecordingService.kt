@@ -17,7 +17,6 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import vn.xdeuhug.camerax.R
 import vn.xdeuhug.camerax.domain.repository.VideoRecordingRepository
-import vn.xdeuhug.camerax.domain.usecase.VideoRecordingUseCase
 import vn.xdeuhug.camerax.presentation.view.VideoRecordingActivity
 import javax.inject.Inject
 

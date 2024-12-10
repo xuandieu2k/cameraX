@@ -55,3 +55,17 @@ f
 6app/src/main/java/vn/xdeuhug/camerax/AppApplication.kt,b\7\b7c584c945591b75ca110385823fe78c3d4623ba
 9
 	README.md,8\e\8ec9a00bfd09b3190ac6b22251dbb1aa95a0579d
+v
+Fapp/src/main/java/vn/xdeuhug/camerax/presentation/view/MainActivity.kt,8\6\86087c3ba4adc26edd91e0c39667455ee05d3e39
+
+Oapp/src/main/java/vn/xdeuhug/camerax/presentation/view/MediaRecordingService.kt,a\6\a689b6f3c5ad84580a36539bd4799102347fdcaf
+†
+Vapp/src/main/java/vn/xdeuhug/camerax/presentation/viewmodel/MediaRecordingViewModel.kt,a\d\ad1ee0cafdea2ee44fa46bc360d3192592b32e04
+x
+Happ/src/main/java/vn/xdeuhug/camerax/data/repository/CameraRepository.kt,7\a\7aefb8e5dd710043659baca038b0d84c301c2d50
+|
+Lapp/src/main/java/vn/xdeuhug/camerax/presentation/viewmodel/MainViewModel.kt,9\c\9c4910876e1adefc3d57fc073954282792843a02
+f
+6app/src/main/java/vn/xdeuhug/camerax/utils/Resource.kt,8\7\87f260d3e6871708eaf70b86fd355c3d78941e99
+r
+Bapp/src/main/java/vn/xdeuhug/camerax/data/source/CameraXManager.kt,e\9\e9d214607ce5b6ff0354090acd80ffd5c216e0a3

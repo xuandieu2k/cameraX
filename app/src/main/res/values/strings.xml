@@ -190,4 +190,6 @@ Brother Wheel
     <!-- Taking photos and filming -->
     <string name="camera_launch_fail">Cannot launch camera</string>
     <string name="camera_image_error">Dest address error</string>
+    <string name="video_recording">Video recording</string>
+    <string name="video_recording_in_background">Video recording in background</string>
 </resources>

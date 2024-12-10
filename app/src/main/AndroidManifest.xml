@@ -7,12 +7,17 @@
         android:required="false" />
 
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!--  Service Background  -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <!--  Support CameraX  -->
+    <!--  Run Camera and Record in background  -->
+    <uses-permission android:name="android.permission.BACKGROUND_CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_BACKGROUND_AUDIO" />
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
@@ -29,6 +34,8 @@
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+
+    <uses-feature android:name="android.hardware.camera.any" />
 
 
 
@@ -71,6 +78,14 @@
             </intent-filter>
 
         </activity>
+
+        <activity android:name=".presentation.view.MainActivity"
+            android:exported="false"/>
+
+        <service android:name=".presentation.view.MediaRecordingService"
+            android:exported="false"
+            android:foregroundServiceType="camera"
+            android:permission="android.permission.FOREGROUND_SERVICE"/>
 
     </application>
 
