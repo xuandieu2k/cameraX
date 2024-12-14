@@ -8,12 +8,15 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!--  Service Background  -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_CAMERA"
+        android:maxSdkVersion="34" />
     <!--  Support CameraX  -->
     <!--  Run Camera and Record in background  -->
     <uses-permission android:name="android.permission.BACKGROUND_CAMERA" />
@@ -23,23 +26,26 @@
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    <uses-permission android:name="android.permission.BACKGROUND_CAMERA"/>
-    <uses-permission android:name="android.permission.RECORD_BACKGROUND_AUDIO"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.BACKGROUND_CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_BACKGROUND_AUDIO" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
     <uses-feature android:name="android.hardware.camera.any" />
 
-
+    <!--  Notification  -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".AppApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -48,28 +54,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:name=".AppApplication"
         tools:targetApi="31">
 
-        <service
-            android:name=".presentation.service.VideoRecordingService"
-            android:exported="false"
-            android:permission="android.permission.FOREGROUND_SERVICE"
-            android:foregroundServiceType="camera">
-            <intent-filter>
-                <action android:name="com.example.action.START_RECORDING" />
-                <action android:name="com.example.action.STOP_RECORDING" />
-            </intent-filter>
-        </service>
-        <activity
-            android:name=".presentation.view.VideoRecordingActivity"
-            android:exported="false">
-        </activity>
         <activity
             android:name=".presentation.view.SplashActivity"
+            android:exported="true"
             android:launchMode="singleTop"
-            android:theme="@style/SplashTheme"
-            android:exported="true">
+            android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.intent.action.VIEW" />
@@ -79,13 +70,24 @@
 
         </activity>
 
-        <activity android:name=".presentation.view.MainActivity"
-            android:exported="false"/>
+        <activity
+            android:name=".presentation.view.MainActivity"
+            android:exported="false" />
 
-        <service android:name=".presentation.view.MediaRecordingService"
+        <activity
+            android:name=".presentation.view.HomeActivity"
+            android:exported="false" />
+
+        <service
+            android:name=".presentation.service.MediaRecordingService"
             android:exported="false"
             android:foregroundServiceType="camera"
-            android:permission="android.permission.FOREGROUND_SERVICE"/>
+            android:permission="android.permission.FOREGROUND_SERVICE" />
+
+        <service
+            android:name="leakcanary.internal.HeapAnalyzerService"
+            android:exported="false"
+            android:foregroundServiceType="camera" />
 
     </application>
 

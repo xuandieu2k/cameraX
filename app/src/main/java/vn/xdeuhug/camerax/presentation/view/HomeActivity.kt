@@ -1,9 +1,21 @@
 package vn.xdeuhug.camerax.presentation.view
 
+import vn.xdeuhug.camerax.base.AppActivity
 
+/**
+ * @Author: NGUYEN XUAN DIEU
+ * @Date: 14 / 12 / 2024
+ */
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.IBinder
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
@@ -14,19 +26,19 @@ import androidx.core.view.isVisible
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import vn.xdeuhug.camerax.R
-import vn.xdeuhug.camerax.base.AppActivity
 import vn.xdeuhug.camerax.databinding.ActivityMainBinding
-import vn.xdeuhug.camerax.presentation.viewmodel.MainViewModel
+import vn.xdeuhug.camerax.presentation.service.MediaRecordingService
+import vn.xdeuhug.camerax.presentation.viewmodel.HomeViewModel
 import vn.xdeuhug.camerax.utils.Resource
 
+
 @AndroidEntryPoint
-class MainActivity : AppActivity() {
-    private val viewModel: MainViewModel by viewModels()
-    private val binding: ActivityMainBinding by lazy {
-        ActivityMainBinding.inflate(layoutInflater)
-    }
+class HomeActivity : AppActivity() {
+    private val viewModel: HomeViewModel by viewModels()
+    private lateinit var binding: ActivityMainBinding
 
     override fun getLayoutView(): View {
+        binding = ActivityMainBinding.inflate(layoutInflater)
         return binding.root
     }
 
@@ -42,7 +54,43 @@ class MainActivity : AppActivity() {
         //
     }
 
+    @SuppressLint("SetTextI18n")
     override fun observerData() {
+
+        viewModel.isSaveVideo.observe(this) {
+            when (it) {
+                is Resource.Error -> {
+                    //
+                }
+
+                is Resource.Loading -> {
+                    //
+                }
+
+                is Resource.Success -> {
+                    //
+                }
+            }
+        }
+
+        viewModel.isFlashOn.observe(this) {
+            when (it) {
+                is Resource.Loading -> {
+                    // Empty
+                }
+
+                is Resource.Success -> {
+                    it.data?.let { isFlashOn ->
+                        //
+                    }
+                }
+
+                is Resource.Error -> {
+                    Timber.tag("${this.viewModel::class.java.name} Error").e(it.message)
+                }
+            }
+        }
+
         viewModel.isRecording.observe(this) {
             when (it) {
                 is Resource.Loading -> {
@@ -59,30 +107,34 @@ class MainActivity : AppActivity() {
             }
         }
 
-        viewModel.rotation.observe(this) {
+        viewModel.ratioType.observe(this) {
             when (it) {
-                is Resource.Loading -> {
-                    // Empty
-                }
-
-                is Resource.Success -> {
+                is Resource.Error -> {
                     //
                 }
 
-                is Resource.Error -> {
-                    Timber.tag("${this.viewModel::class.java.name} Error").e(it.message)
+                is Resource.Loading -> {
+                    //
+                }
+
+                is Resource.Success -> {
+                    it.data?.let { ratio ->
+                        //
+                    }
                 }
             }
         }
 
-        viewModel.ratioType.observe(this) {
+        viewModel.pinchZoom.observe(this) {
             when (it) {
                 is Resource.Loading -> {
                     // Empty
                 }
 
                 is Resource.Success -> {
-                    //
+                    it.data?.let { level ->
+//                        binding.tvZoomSize.text = "${"%.1f".format(level)} x"
+                    }
                 }
 
                 is Resource.Error -> {
@@ -114,7 +166,9 @@ class MainActivity : AppActivity() {
                 }
 
                 is Resource.Success -> {
-                    //
+                    it.data?.let { quality ->
+                        //
+                    }
                 }
 
                 is Resource.Error -> {
@@ -123,18 +177,21 @@ class MainActivity : AppActivity() {
             }
         }
 
-        viewModel.timeRecord.observe(this) {
+        viewModel.timerRecord.observe(this) {
             when (it) {
                 is Resource.Loading -> {
                     // Empty
                 }
 
                 is Resource.Success -> {
-                    binding.tvRecordingTimer.text = it.data
+                    it.data?.let { str ->
+                        binding.tvRecordingTimer.text = it.data
+                        Timber.tag("${this.viewModel::class.java.name} Timer").e(str)
+                    }
                 }
 
                 is Resource.Error -> {
-                    //
+                    Timber.tag("${this.viewModel::class.java.name} Error").e(it.message)
                 }
             }
         }
@@ -142,16 +199,21 @@ class MainActivity : AppActivity() {
 
     // #### SETUP VIEW ##########
     private fun setUpView() {
+        setUpClickView()
+        setTouchPreviewCamera()
+    }
+
+    private fun setUpClickView() {
         binding.btnStartRecord.setOnClickListener {
             viewModel.onPauseRecordClicked()
         }
 
         binding.btnSwapCamera.setOnClickListener {
-            viewModel.switchCamera(this)
+            viewModel.switchCamera()
         }
 
         binding.btnTakePicture.setOnClickListener {
-            viewModel.takeAPhoto()
+            viewModel.takeAPicture()
         }
     }
 
@@ -160,15 +222,32 @@ class MainActivity : AppActivity() {
         binding.btnStartRecord.setImageResource(if (isRecording) R.drawable.ic_recording else R.drawable.ic_record_off)
     }
 
+    private fun setTouchPreviewCamera() {
+        val scaleGestureDetector = ScaleGestureDetector(
+            this,
+            object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+                    viewModel.pinchZoomCamera(detector)
+                    return true
+                }
+            })
+
+        binding.previewView.setOnTouchListener { view, event ->
+            view.performClick()
+            scaleGestureDetector.onTouchEvent(event)
+            return@setOnTouchListener true
+        }
+    }
+
     // #### PERMISSIONS FIRST ##########
     private fun checkAndRequestPermissions() {
         val permissions = arrayOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             permissions.plus(Manifest.permission.READ_MEDIA_VIDEO)
             permissions.plus(Manifest.permission.FOREGROUND_SERVICE_CAMERA)
+            permissions.plus(Manifest.permission.POST_NOTIFICATIONS)
         }
 
         val neededPermissions = permissions.filter {
@@ -180,7 +259,7 @@ class MainActivity : AppActivity() {
                 this, neededPermissions.toTypedArray(), PERMISSION_REQUEST_CODE
             )
         } else {
-            viewModel.initializeCamera(binding.previewView, this)
+            bindService()
         }
     }
 
@@ -190,9 +269,9 @@ class MainActivity : AppActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                viewModel.initializeCamera(binding.previewView, this)
+                bindService()
             } else {
-                showToast("Permissions are required to record video.")
+                //
             }
         }
     }
@@ -204,7 +283,7 @@ class MainActivity : AppActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.bindPreview(binding.previewView, this)
+        viewModel.bindPreview(binding.previewView.surfaceProvider)
     }
 
 
@@ -213,25 +292,25 @@ class MainActivity : AppActivity() {
         checkAndRequestPermissions()
     }
 
-//    private fun bindService() {
-//        val intent = Intent(this, MediaRecordingService::class.java)
-//        intent.action = MediaRecordingService.ACTION_START_WITH_PREVIEW
-//        startService(intent)
-//        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-//    }
-//
-//    private val serviceConnection: ServiceConnection = object : ServiceConnection {
-//        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-//            viewModel.setRecordingService(
-//                (service as MediaRecordingService.RecordingServiceBinder).getService(),
-//                binding.previewView.surfaceProvider
-//            )
-//        }
-//
-//        override fun onServiceDisconnected(name: ComponentName?) {
-//            //
-//        }
-//    }
+    private fun bindService() {
+        val intent = Intent(this, MediaRecordingService::class.java)
+        intent.action = MediaRecordingService.ACTION_START_WITH_PREVIEW
+        startService(intent)
+        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+    }
+
+    private val serviceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            viewModel.setRecordingService(
+                (service as MediaRecordingService.RecordingServiceBinder).getService(),
+                binding.previewView.surfaceProvider
+            )
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            //
+        }
+    }
 
     override fun onStop() {
         super.onStop()

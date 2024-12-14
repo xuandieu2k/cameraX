@@ -1,87 +1,119 @@
 package vn.xdeuhug.camerax.data.source
 
 import android.Manifest
-import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
+import android.os.Binder
+import android.os.Environment
 import android.provider.MediaStore
+import android.view.ScaleGestureDetector
 import android.widget.Toast
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoCapture.withOutput
 import androidx.camera.video.VideoRecordEvent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import timber.log.Timber
-import vn.xdeuhug.camerax.presentation.view.MediaRecordingService
-import vn.xdeuhug.camerax.presentation.view.MediaRecordingService.Companion.BIND_USECASE
-import vn.xdeuhug.camerax.presentation.view.MediaRecordingService.DataListener
-import vn.xdeuhug.camerax.presentation.view.MediaRecordingService.RecordingServiceBinder
-import vn.xdeuhug.camerax.presentation.view.MediaRecordingService.RecordingState
-import java.text.SimpleDateFormat
-import java.util.Locale
+import vn.xdeuhug.camerax.presentation.service.MediaRecordingService
+import vn.xdeuhug.camerax.utils.FileUtils
+import java.io.File
+import java.io.FileInputStream
 import java.util.Timer
 import java.util.TimerTask
+import java.util.concurrent.Executors
 import javax.inject.Inject
 
-/**
- * @Author: NGUYEN XUAN DIEU
- * @Date: 10 / 12 / 2024
- */
+
 class CameraXManager @Inject constructor(private val context: Context) {
 
     companion object {
         private val TAG = CameraXManager::class.simpleName
-        private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
+        const val BIND_USECASE: String = "bind_usecase"
     }
 
     private var preview: Preview? = null
     private lateinit var timer: Timer
     private var cameraProvider: ProcessCameraProvider? = null
-    private lateinit var recordingServiceBinder: RecordingServiceBinder
     private var activeRecording: Recording? = null
-    private var videoCapture: androidx.camera.video.VideoCapture<Recorder>? = null
-    val listeners = HashSet<DataListener>(1)
+    private var videoCapture: VideoCapture<Recorder>? = null
+    private var imageCapture: ImageCapture? = null
+    val listeners = HashSet<CameraXListener>(1)
     private val pendingActions: HashMap<String, Runnable> = hashMapOf()
     private var recordingState: RecordingState = RecordingState.STOPPED
+    private lateinit var recordingServiceBinder: MediaRecordingService.RecordingServiceBinder
     private var duration: Int = 0
     private var timerTask: TimerTask? = null
     private var isSoundEnabled: Boolean = true
-    private var currentCameraSelector: CameraSelector =
-        CameraSelector.DEFAULT_BACK_CAMERA // Select back camera as a default
+    private var currentCameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private var selectedQuality: Quality = Quality.HD
+    private var aspectRatio: Int = AspectRatio.RATIO_16_9
+
+    enum class RecordingState {
+        RECORDING, PAUSED, STOPPED
+    }
+
+    class RecordingServiceBinder(private val service: MediaRecordingService) : Binder() {
+        fun getService(): MediaRecordingService {
+            return service
+        }
+    }
+
 
     fun setTimer(timer: Timer) {
         this.timer = timer
     }
 
+    fun getRecordingState(): RecordingState {
+        return recordingState
+    }
 
+    fun setRecordingServiceBinder(recordingServiceBinder: MediaRecordingService.RecordingServiceBinder) {
+        this.recordingServiceBinder = recordingServiceBinder
+    }
+
+    fun getRecordingServiceBinder(): MediaRecordingService.RecordingServiceBinder {
+        return this.recordingServiceBinder
+    }
+
+    fun getCameraProvider(): ProcessCameraProvider? {
+        return cameraProvider
+    }
+
+
+    // ##### Main Function (Init/Start/Stop) ####
     fun initializeCamera(lifecycleOwner: LifecycleOwner) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
-            // Used to bind the lifecycle of cameras to the lifecycle owner
             cameraProvider = cameraProviderFuture.get()
             val qualitySelector = getQualitySelector()
-            val recorder = Recorder.Builder().setQualitySelector(qualitySelector).build()
+            val recorder =
+                Recorder.Builder().setAspectRatio(aspectRatio).setQualitySelector(qualitySelector)
+                    .build()
             videoCapture = withOutput(recorder)
+            @Suppress("DEPRECATION")
+            imageCapture = ImageCapture.Builder().setTargetAspectRatio(aspectRatio).build()
 
             try {
-                // Unbind use cases before rebinding
                 cameraProvider?.unbindAll()
-                // Bind use cases to camera
-                cameraProvider?.bindToLifecycle(lifecycleOwner, currentCameraSelector, videoCapture)
+                cameraProvider?.bindToLifecycle(
+                    lifecycleOwner, currentCameraSelector, videoCapture, imageCapture
+                )
             } catch (exc: Exception) {
-                Timber.e(MediaRecordingService::class.simpleName, "Use case binding failed", exc)
+                Timber.e(CameraXManager::class.simpleName, "Use case binding failed", exc)
             }
             val action = pendingActions[BIND_USECASE]
             action?.run()
@@ -90,35 +122,57 @@ class CameraXManager @Inject constructor(private val context: Context) {
     }
 
     fun startRecording() {
-        val mediaStoreOutputOptions = createMediaStoreOutputOptions()
+        val videoDir = context.getExternalFilesDir(Environment.DIRECTORY_MOVIES) ?: context.cacheDir
+        val videoFile = File(videoDir, "video_${System.currentTimeMillis()}.mp4")
+        val outputOptions = FileOutputOptions.Builder(videoFile).build()
 
+        val mediaStoreOutputOptions = FileUtils.createMediaStoreOutputOptions(context = context)
         if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.RECORD_AUDIO
+                context, Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+            Timber.e(
+                CameraXManager::class.simpleName,
+                "startRecording fail: Permission not allowed"
+            )
             return
         }
 
-        activeRecording = videoCapture?.output?.prepareRecording(context, mediaStoreOutputOptions)
-            ?.apply {
+        activeRecording =
+            videoCapture?.output?.prepareRecording(context, outputOptions)?.apply {
                 if (ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.RECORD_AUDIO
+                        context, Manifest.permission.RECORD_AUDIO
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     if (isSoundEnabled) withAudioEnabled()
                 }
-            }
-            ?.start(ContextCompat.getMainExecutor(context)) { recordEvent ->
+            }?.start(ContextCompat.getMainExecutor(context)) { recordEvent ->
                 when (recordEvent) {
                     is VideoRecordEvent.Start -> {
                         startTrackingTime()
-                        recordingState = RecordingState.RECORDING
+                        updateRecordingState(RecordingState.RECORDING)
+                    }
+
+                    is VideoRecordEvent.Status -> {
+                        val fileSizeInBytes = videoFile.length()
+                        Timber.tag("CameraX size:")
+                            .d("Dung lượng tệp hiện tại: $fileSizeInBytes bytes")
                     }
 
                     is VideoRecordEvent.Finalize -> {
-                        recordingState = RecordingState.STOPPED
+                        val contentUri = mediaStoreOutputOptions.contentResolver.insert(
+                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                            mediaStoreOutputOptions.contentValues
+                        )
+                        contentUri?.let {
+                            mediaStoreOutputOptions.contentResolver.openOutputStream(contentUri)
+                                ?.use { outputStream ->
+                                    FileInputStream(videoFile).use { inputStream ->
+                                        inputStream.copyTo(outputStream)
+                                    }
+                                }
+                        }
+                        updateRecordingState(RecordingState.STOPPED)
                         duration = 0
                         timerTask?.cancel()
                     }
@@ -127,43 +181,68 @@ class CameraXManager @Inject constructor(private val context: Context) {
                     listener.onRecordingEvent(recordEvent)
                 }
             }
-        recordingState = RecordingState.RECORDING
+        updateRecordingState(RecordingState.RECORDING)
     }
 
+    fun stopRecording() {
+        activeRecording?.stop()
+        activeRecording = null
+    }
+
+    fun destroyCamera() {
+        activeRecording?.stop()
+        activeRecording = null
+        timerTask?.cancel()
+    }
+
+
+    fun takeAPicture(onImageSaved: ImageCapture.OnImageSavedCallback) {
+        if (imageCapture == null) Timber.tag("Log Take A Picture").e("Image Capture is null")
+        imageCapture?.takePicture(FileUtils.createPictureStoreOutput(context = context),
+            Executors.newSingleThreadExecutor(),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onError(error: ImageCaptureException) {
+                    onImageSaved.onError(error)
+                }
+
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    onImageSaved.onImageSaved(outputFileResults)
+                }
+            })
+    }
+
+
+    // ###### Function of camera (zoom, switch, flash,...)
     fun switchCameraDuringRecording(lifecycleOwner: LifecycleOwner) {
         try {
-            // Kiểm tra trạng thái ghi hình hiện tại
             if (recordingState == RecordingState.RECORDING) {
                 Timber.d(TAG, "Pausing recording before switching camera")
-                activeRecording?.pause() // Tạm dừng ghi
+                activeRecording?.pause()
             }
 
-            // Chuyển đổi camera
-            currentCameraSelector = if (currentCameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
-                CameraSelector.DEFAULT_FRONT_CAMERA
-            } else {
-                CameraSelector.DEFAULT_BACK_CAMERA
-            }
+            currentCameraSelector =
+                if (currentCameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+                } else {
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                }
 
-            // Unbind các use cases cũ (chỉ Preview và VideoCapture)
             cameraProvider?.unbind(preview, videoCapture)
 
-            // Bind lại Preview và VideoCapture với camera mới
             preview?.let { preview ->
-                cameraProvider?.bindToLifecycle(lifecycleOwner, currentCameraSelector, preview, videoCapture)
+                cameraProvider?.bindToLifecycle(
+                    lifecycleOwner, currentCameraSelector, preview, videoCapture
+                )
             }
 
-            // Tiếp tục ghi nếu trạng thái trước đó là RECORDING
             if (recordingState == RecordingState.RECORDING) {
                 Timber.d(TAG, "Resuming recording after switching camera")
-                activeRecording?.resume() // Tiếp tục ghi
+                activeRecording?.resume()
             }
         } catch (e: Exception) {
             Timber.e(TAG, "Error switching camera during recording: ${e.message}")
         }
     }
-
-
 
     private fun startTrackingTime() {
         timerTask = object : TimerTask() {
@@ -179,30 +258,8 @@ class CameraXManager @Inject constructor(private val context: Context) {
         timer.schedule(timerTask, 1000, 1000)
     }
 
-    fun stopRecording() {
-        activeRecording?.stop()
-        activeRecording = null
-    }
-
-    private fun createMediaStoreOutputOptions(): MediaStoreOutputOptions {
-        val name =
-            "CameraX-recording-" + SimpleDateFormat(FILENAME_FORMAT, Locale.getDefault()).format(
-                System.currentTimeMillis()
-            ) + ".mp4"
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Video.Media.DISPLAY_NAME, name)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Recorded Videos")
-            }
-        }
-        return MediaStoreOutputOptions.Builder(
-            context.contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        ).setContentValues(contentValues).build()
-    }
-
     fun bindPreviewUseCase(
-        surfaceProvider: Preview.SurfaceProvider?,
-        lifecycleOwner: LifecycleOwner
+        surfaceProvider: Preview.SurfaceProvider?, lifecycleOwner: LifecycleOwner
     ) {
         activeRecording?.pause()
         if (cameraProvider != null) {
@@ -215,8 +272,7 @@ class CameraXManager @Inject constructor(private val context: Context) {
     }
 
     private fun bindInternal(
-        surfaceProvider: Preview.SurfaceProvider?,
-        lifecycleOwner: LifecycleOwner
+        surfaceProvider: Preview.SurfaceProvider?, lifecycleOwner: LifecycleOwner
     ) {
         if (preview != null) {
             cameraProvider?.unbind(preview)
@@ -224,7 +280,7 @@ class CameraXManager @Inject constructor(private val context: Context) {
         initPreviewUseCase()
         preview?.setSurfaceProvider(surfaceProvider)
         val cameraInfo: CameraInfo? = cameraProvider?.bindToLifecycle(
-            lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview
+            lifecycleOwner, currentCameraSelector, preview
         )?.cameraInfo
         observeCameraState(cameraInfo, context, lifecycleOwner)
     }
@@ -288,7 +344,7 @@ class CameraXManager @Inject constructor(private val context: Context) {
                     }
 
                     CameraState.ERROR_OTHER_RECOVERABLE_ERROR -> {
-
+                        //
                     }
                     // Closing errors
                     CameraState.ERROR_CAMERA_DISABLED -> {
@@ -318,7 +374,8 @@ class CameraXManager @Inject constructor(private val context: Context) {
 
     private fun initPreviewUseCase() {
         preview?.setSurfaceProvider(null)
-        preview = Preview.Builder().build()
+        @Suppress("DEPRECATION")
+        preview = Preview.Builder().setTargetAspectRatio(aspectRatio).build()
     }
 
     fun bindPreview(surfaceProvider: Preview.SurfaceProvider, lifecycleOwner: LifecycleOwner) {
@@ -334,13 +391,11 @@ class CameraXManager @Inject constructor(private val context: Context) {
     }
 
     fun switchCamera(lifecycleOwner: LifecycleOwner) {
-        // Tạm dừng ghi video
         if (recordingState == RecordingState.RECORDING) {
             activeRecording?.pause()
-            recordingState = RecordingState.PAUSED
+            updateRecordingState(RecordingState.PAUSED)
         }
 
-        // Chuyển camera
         currentCameraSelector = if (currentCameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
             CameraSelector.DEFAULT_FRONT_CAMERA
         } else {
@@ -348,35 +403,38 @@ class CameraXManager @Inject constructor(private val context: Context) {
         }
 
         cameraProvider?.let {
-            val currentRecording = activeRecording // Lưu trạng thái ghi hiện tại
+            val currentRecording = activeRecording
 
-            // Unbind tất cả các use cases trước
             it.unbindAll()
 
-            // Bind lại Preview và VideoCapture với camera mới
             preview?.let { preview ->
                 it.bindToLifecycle(lifecycleOwner, currentCameraSelector, preview, videoCapture)
             }
 
-            // Tiếp tục ghi video sau khi chuyển camera
             if (currentRecording != null && recordingState == RecordingState.PAUSED) {
-                startRecording() // Bắt đầu ghi lại video
+                startRecording()
             }
         }
     }
 
+    fun setAspectRatio(ratio: Int, lifecycleOwner: LifecycleOwner) {
+        aspectRatio = ratio
+        initializeCamera(lifecycleOwner)
+    }
 
-//    fun setTargetRotation(rotation: Int) {
+
+    fun setTargetRotation(rotation: Int, lifecycleOwner: LifecycleOwner) {
 //        preview?.targetRotation = rotation
-//        videoCapture?.targetRotation = rotation
-//        initializeCamera()
-//    }
-//
-//
-//    fun setVideoQuality(quality: Quality) {
-//        selectedQuality = quality
-//        initializeCamera()
-//    }
+        videoCapture?.targetRotation = rotation
+        imageCapture?.targetRotation = rotation
+        initializeCamera(lifecycleOwner)
+    }
+
+
+    fun setVideoQuality(quality: Quality, lifecycleOwner: LifecycleOwner) {
+        selectedQuality = quality
+        initializeCamera(lifecycleOwner)
+    }
 
     private fun getQualitySelector(): QualitySelector {
         return QualitySelector.from(selectedQuality)
@@ -408,25 +466,38 @@ class CameraXManager @Inject constructor(private val context: Context) {
         cameraControl?.setZoomRatio(clampedZoom)
     }
 
-    fun getRecordingState(): RecordingState {
-        return recordingState
+    fun pinchZoom(detector: ScaleGestureDetector, lifecycleOwner: LifecycleOwner) {
+        val camera = cameraProvider?.bindToLifecycle(lifecycleOwner, currentCameraSelector)
+        camera?.let {
+            val scale = it.cameraInfo.zoomState.value!!.zoomRatio * detector.scaleFactor
+            it.cameraControl.setZoomRatio(scale)
+            for (listener in listeners) {
+                listener.onPinchZoomCamera(scale)
+            }
+        }
     }
 
-    fun setRecordingServiceBinder(recordingServiceBinder: RecordingServiceBinder) {
-        this.recordingServiceBinder = recordingServiceBinder
+    fun addListenerCameraX(listener: CameraXListener) {
+        listeners.add(listener)
     }
 
-    fun getRecordingServiceBinder(): RecordingServiceBinder {
-        return this.recordingServiceBinder
+    fun removeListenerCameraX(listener: CameraXListener) {
+        listeners.remove(listener)
     }
 
-    fun getCameraProvider(): ProcessCameraProvider? {
-        return cameraProvider
+    private fun updateRecordingState(recordingState: RecordingState) {
+        this.recordingState = recordingState
+        for (listener in listeners) {
+            listener.onRecordingStateChanged(recordingState)
+        }
     }
 
-    fun destroyCamera() {
-        activeRecording?.stop()
-        timerTask?.cancel()
+    interface CameraXListener {
+        fun onNewData(duration: Int)
+        fun onCameraOpened()
+        fun onRecordingEvent(it: VideoRecordEvent?)
+        fun onPinchZoomCamera(scale: Float)
+        fun onRecordingStateChanged(recordingState: RecordingState)
     }
 
 }

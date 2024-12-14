@@ -1,12 +1,12 @@
 package vn.xdeuhug.camerax.domain.usecase
 
-import android.content.Context
-import androidx.camera.video.Quality
+import android.view.ScaleGestureDetector
+import androidx.camera.core.ImageCapture
 import androidx.camera.view.PreviewView
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import vn.xdeuhug.camerax.data.source.CameraXManager.CameraXListener
 import vn.xdeuhug.camerax.domain.repository.VideoRecordingRepository
+import vn.xdeuhug.camerax.utils.Resource
 import javax.inject.Inject
 
 /**
@@ -15,30 +15,74 @@ import javax.inject.Inject
  */
 class VideoRecordingUseCase @Inject constructor(private val repository: VideoRecordingRepository) {
 
-    private val _isRecording: MutableLiveData<Boolean> = MutableLiveData(false)
-    val isRecording: LiveData<Boolean> get() = _isRecording
-
     suspend fun initializeCamera(
         lifecycleOwner: LifecycleOwner,
         previewView: PreviewView
-    ) {
-        repository.setupCamera( lifecycleOwner, previewView)
+    ): Resource<Boolean> {
+        try {
+            repository.initializeCamera(lifecycleOwner, previewView)
+            return Resource.Success(true)
+        } catch (ex: Exception) {
+            return Resource.Error(ex.toString())
+        }
     }
 
-    suspend fun startRecording(outputFilePath: String): Boolean {
-        return repository.startRecording(outputFilePath)
+    suspend fun startRecording(): Resource<Boolean> {
+        try {
+            repository.startRecording()
+            return Resource.Success(true)
+        } catch (ex: Exception) {
+            return Resource.Error(ex.toString())
+        }
     }
 
-    suspend fun stopRecording(): Boolean {
-        _isRecording.value = repository.stopRecording()
-        return _isRecording.value ?: false
+    suspend fun stopRecording(): Resource<Boolean> {
+        try {
+            repository.stopRecording()
+            return Resource.Success(true)
+        } catch (ex: Exception) {
+            return Resource.Error(ex.toString())
+        }
     }
 
-    suspend fun switchCamera(): Boolean {
-        return repository.switchCamera()
+    suspend fun switchCamera(lifecycleOwner: LifecycleOwner): Resource<Boolean> {
+        try {
+            repository.switchCamera(lifecycleOwner)
+            return Resource.Success(true)
+        } catch (ex: Exception) {
+            return Resource.Error(ex.toString())
+        }
     }
 
-    suspend fun getAvailableQualities(): List<Quality> {
-        return repository.getAvailableQualities()
+    suspend fun pinchZoom(
+        detector: ScaleGestureDetector,
+        lifecycleOwner: LifecycleOwner
+    ): Resource<Boolean> {
+        try {
+            repository.pinchZoom(detector, lifecycleOwner)
+            return Resource.Success(true)
+        } catch (ex: Exception) {
+            return Resource.Error(ex.toString())
+        }
+    }
+
+    suspend fun addListenerCameraX(listener: CameraXListener) {
+        repository.addListenerCameraX(listener)
+    }
+
+    suspend fun removeListenerCameraX(listener: CameraXListener) {
+        repository.removeListenerCameraX(listener)
+    }
+
+    suspend fun destroyCamera() {
+        repository.destroyCamera()
+    }
+
+    suspend fun takeAPicture(onImageSaved: ImageCapture.OnImageSavedCallback) {
+        repository.takeAPicture(onImageSaved)
+    }
+
+    suspend fun bindPreview(preview: PreviewView, lifecycleOwner: LifecycleOwner) {
+        repository.bindPreview(preview, lifecycleOwner)
     }
 }

@@ -13,8 +13,6 @@ A
 gradle.properties,2\a\2afbb999f001938c88fa43fc2ef52abf0f8213e4
 F
 app/proguard-rules.pro,9\e\9e08934d811afe28fbc77aaa3c0d747b94348db9
-h
-8app/src/main/java/vn/xdeuhug/camerax/di/ServiceModule.kt,b\3\b3be65f8d29d715f8bf46609de39ca38e1b82bdb
 €
 Papp/src/main/java/vn/xdeuhug/camerax/presentation/view/VideoRecordingActivity.kt,e\e\ee9985a0034c53ba073edcc82699268a51e547ef
 E
@@ -49,8 +47,6 @@ i
 9app/src/main/java/vn/xdeuhug/camerax/utils/FileManager.kt,5\6\56e4d199c81f795141a5266e864a9b399d789a75
 ‚
 Rapp/src/main/java/vn/xdeuhug/camerax/presentation/service/VideoRecordingService.kt,2\a\2a8de61ce9d4a47b4db9cb3728a44ae7f080268a
-q
-Aapp/src/main/java/vn/xdeuhug/camerax/data/source/CameraManager.kt,1\6\16fdba7459159098bb3ddde5f6346d3a3bd6a67b
 f
 6app/src/main/java/vn/xdeuhug/camerax/AppApplication.kt,b\7\b7c584c945591b75ca110385823fe78c3d4623ba
 9
@@ -61,11 +57,17 @@ Fapp/src/main/java/vn/xdeuhug/camerax/presentation/view/MainActivity.kt,8\6\860
 Oapp/src/main/java/vn/xdeuhug/camerax/presentation/view/MediaRecordingService.kt,a\6\a689b6f3c5ad84580a36539bd4799102347fdcaf
 †
 Vapp/src/main/java/vn/xdeuhug/camerax/presentation/viewmodel/MediaRecordingViewModel.kt,a\d\ad1ee0cafdea2ee44fa46bc360d3192592b32e04
-x
-Happ/src/main/java/vn/xdeuhug/camerax/data/repository/CameraRepository.kt,7\a\7aefb8e5dd710043659baca038b0d84c301c2d50
 |
 Lapp/src/main/java/vn/xdeuhug/camerax/presentation/viewmodel/MainViewModel.kt,9\c\9c4910876e1adefc3d57fc073954282792843a02
 f
 6app/src/main/java/vn/xdeuhug/camerax/utils/Resource.kt,8\7\87f260d3e6871708eaf70b86fd355c3d78941e99
 r
 Bapp/src/main/java/vn/xdeuhug/camerax/data/source/CameraXManager.kt,e\9\e9d214607ce5b6ff0354090acd80ffd5c216e0a3
+g
+7app/src/main/java/vn/xdeuhug/camerax/utils/FileUtils.kt,8\d\8d9de01243288b1109b8251edc6105a2dfab4cb9
+‚
+Rapp/src/main/java/vn/xdeuhug/camerax/presentation/service/MediaRecordingService.kt,2\4\24c0e60660adbd305456f8154a6dd06c0b2815ad
+v
+Fapp/src/main/java/vn/xdeuhug/camerax/presentation/view/HomeActivity.kt,2\f\2f74cfdaaaa8815e44a3f3cf3f9b6a3e1aa3b2dd
+|
+Lapp/src/main/java/vn/xdeuhug/camerax/presentation/viewmodel/HomeViewModel.kt,8\c\8cd36c3bbd88597587a9f90053f2dcfca1581522

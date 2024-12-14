@@ -1,9 +1,4 @@
-package vn.xdeuhug.camerax.presentation.view
-
-/**
- * @Author: NGUYEN XUAN DIEU
- * @Date: 09 / 12 / 2024
- */
+package vn.xdeuhug.camerax.presentation.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -16,18 +11,17 @@ import android.content.pm.ServiceInfo
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
-import androidx.camera.core.CameraSelector
+import android.view.ScaleGestureDetector
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.Quality
-import androidx.camera.video.VideoRecordEvent
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import dagger.hilt.android.AndroidEntryPoint
 import vn.xdeuhug.camerax.R
 import vn.xdeuhug.camerax.data.source.CameraXManager
+import vn.xdeuhug.camerax.presentation.view.MainActivity
 import java.util.Timer
-import java.util.TimerTask
 import java.util.concurrent.ThreadLocalRandom
 import javax.inject.Inject
 
@@ -45,16 +39,11 @@ class MediaRecordingService : LifecycleService() {
         const val BIND_USECASE: String = "bind_usecase"
     }
 
-    enum class RecordingState {
-        RECORDING, PAUSED, STOPPED
-    }
-
     class RecordingServiceBinder(private val service: MediaRecordingService) : Binder() {
         fun getService(): MediaRecordingService {
             return service
         }
     }
-
 
     private var aspectRatio: Int = androidx.camera.core.AspectRatio.RATIO_4_3
 
@@ -85,7 +74,6 @@ class MediaRecordingService : LifecycleService() {
     }
 
 
-
     fun stopRecording() {
         cameraXManager.stopRecording()
     }
@@ -109,8 +97,7 @@ class MediaRecordingService : LifecycleService() {
         val resultPendingIntent: PendingIntent =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 parentStack.getPendingIntent(
-                    randomID,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                    randomID, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
                 )
             } else {
                 parentStack.getPendingIntent(randomID, PendingIntent.FLAG_UPDATE_CURRENT)
@@ -128,36 +115,19 @@ class MediaRecordingService : LifecycleService() {
             .setContentTitle(getText(R.string.video_recording))
             .setContentText(getText(R.string.video_recording_in_background))
             .setSmallIcon(R.drawable.ic_recording).setContentIntent(resultPendingIntent).build()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            startForeground(ONGOING_NOTIFICATION_ID, notification)
+        } else {
             startForeground(
-                ONGOING_NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+                ONGOING_NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
             )
-            return
         }
-        startForeground(ONGOING_NOTIFICATION_ID, notification)
+
     }
 
     fun setAspectRatio(ratio: Int) {
-//        aspectRatio = ratio
-//        preview?.apply {
-//            // Giữ lại SurfaceProvider hiện tại
-//            val surfaceProvider = this.surfaceProvider
-//
-//            // Xây dựng lại Preview với tỷ lệ khung hình mới
-//            val newPreview = Preview.Builder()
-//                .setTargetAspectRatio(aspectRatio)  // Cập nhật tỷ lệ khung hình
-//                .build()
-//
-//            // Gắn lại SurfaceProvider vào Preview mới
-//            newPreview.setSurfaceProvider(surfaceProvider)
-//
-//            // Unbind Preview cũ và bind lại Preview mới
-//            cameraProvider?.unbind(preview)
-//            preview = newPreview
-//            cameraProvider?.bindToLifecycle(this@MediaRecordingService, currentCameraSelector, preview, videoCapture)
-//        }
+        cameraXManager.setAspectRatio(ratio, this)
     }
 
 
@@ -167,36 +137,29 @@ class MediaRecordingService : LifecycleService() {
 
 
     fun setTargetRotation(rotation: Int) {
-//        preview?.targetRotation = rotation
-//        videoCapture?.targetRotation = rotation
-//        initializeCamera()
+        cameraXManager.setTargetRotation(rotation, this)
     }
 
 
     fun setVideoQuality(quality: Quality) {
-//        selectedQuality = quality
-//        initializeCamera()
+        cameraXManager.setVideoQuality(quality, this)
     }
 
-//    private fun getQualitySelector(): QualitySelector {
-//        return QualitySelector.from(selectedQuality)
-//    }
+    fun takeAPicture(onImageSaved: ImageCapture.OnImageSavedCallback) {
+        cameraXManager.takeAPicture(onImageSaved)
+    }
 
 
     fun toggleFlash(enable: Boolean) {
         cameraXManager.toggleFlash(enable, this)
     }
 
-//    fun isSoundEnabled(): Boolean {
-//        return isSoundEnabled
-//    }
-//
-//    fun setSoundEnabled(enabled: Boolean) {
-//        isSoundEnabled = enabled
-//    }
-
     fun setZoomLevel(zoomLevel: Float) {
         cameraXManager.setZoomLevel(zoomLevel, this)
+    }
+
+    fun pinchZoom(detector: ScaleGestureDetector) {
+        cameraXManager.pinchZoom(detector, this)
     }
 
     // Stop recording and remove SurfaceView
@@ -210,22 +173,15 @@ class MediaRecordingService : LifecycleService() {
         return cameraXManager.getRecordingServiceBinder()
     }
 
-    fun addListener(listener: DataListener) {
+    fun addListener(listener: CameraXManager.CameraXListener) {
         cameraXManager.listeners.add(listener)
     }
 
-    fun removeListener(listener: DataListener) {
+    fun removeListener(listener: CameraXManager.CameraXListener) {
         cameraXManager.listeners.remove(listener)
     }
 
-    fun getRecordingState(): RecordingState {
+    fun getRecordingState(): CameraXManager.RecordingState {
         return cameraXManager.getRecordingState()
     }
-
-    interface DataListener {
-        fun onNewData(duration: Int)
-        fun onCameraOpened()
-        fun onRecordingEvent(it: VideoRecordEvent?)
-    }
-
 }

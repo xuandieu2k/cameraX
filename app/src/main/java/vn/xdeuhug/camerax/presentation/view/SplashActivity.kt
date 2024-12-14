@@ -25,7 +25,7 @@ class SplashActivity : AppActivity() {
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
         )
         Handler(Looper.getMainLooper()).postDelayed({
-            startActivity(Intent(this, VideoRecordingActivity::class.java))
+            startActivity(Intent(this, HomeActivity::class.java))
             finish()
         }, 2000)
     }

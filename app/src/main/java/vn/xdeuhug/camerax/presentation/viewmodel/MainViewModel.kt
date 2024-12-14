@@ -6,13 +6,14 @@ package vn.xdeuhug.camerax.presentation.viewmodel
  */
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.camera.video.Quality
 import androidx.camera.video.VideoRecordEvent
-import androidx.core.app.ServiceCompat
+import androidx.camera.view.PreviewView
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -23,13 +24,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import vn.xdeuhug.camerax.presentation.view.MediaRecordingService
+import vn.xdeuhug.camerax.data.source.CameraXManager
+import vn.xdeuhug.camerax.domain.usecase.VideoRecordingUseCase
 import vn.xdeuhug.camerax.utils.Resource
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(@ApplicationContext private val context: Context) :
-    ViewModel(), MediaRecordingService.DataListener {
+class MainViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val videoRecordingUseCase: VideoRecordingUseCase
+) : ViewModel(), CameraXManager.CameraXListener {
     private val _isFlashOn: MutableLiveData<Resource<Boolean>> =
         MutableLiveData(Resource.Success(false))
     val isFlashOn: LiveData<Resource<Boolean>> = _isFlashOn
@@ -49,6 +53,19 @@ class MainViewModel @Inject constructor(@ApplicationContext private val context:
     private val _rotation: MutableLiveData<Resource<Int>> = MutableLiveData(Resource.Success(0))
     val rotation: LiveData<Resource<Int>> = _rotation
 
+    private val _timeRecord: MutableLiveData<Resource<String>> =
+        MutableLiveData(Resource.Success("00:00:00"))
+    val timeRecord: LiveData<Resource<String>> = _timeRecord
+
+    private val _initCamera: MutableLiveData<Resource<Boolean>> =
+        MutableLiveData(Resource.Success(false))
+    val initCamera: LiveData<Resource<Boolean>> = _initCamera
+
+    private val _statusRecord: MutableLiveData<Resource<CameraXManager.RecordingState>> =
+        MutableLiveData(Resource.Success(CameraXManager.RecordingState.STOPPED))
+    val statusRecord: LiveData<Resource<CameraXManager.RecordingState>> = _statusRecord
+
+
 //    private val _zoomLevel: MutableLiveData<Resource<AppConstants.ZoomMode>> =
 //        MutableLiveData(Resource.Success(AppConstants.ZoomMode.X1))
 //    val zoomLevel: LiveData<Resource<AppConstants.ZoomMode>> = _zoomLevel
@@ -61,115 +78,68 @@ class MainViewModel @Inject constructor(@ApplicationContext private val context:
         MutableLiveData(Resource.Success(false))
     val isRecording: LiveData<Resource<Boolean>> = _isRecording
 
-
-    private var recordingService: MediaRecordingService? = null
-    private var surfaceProvider: Preview.SurfaceProvider? = null
-    private var isReverseLandscape: Boolean = false
-
-    fun setRecordingService(
-        service: MediaRecordingService, surfaceProvider: Preview.SurfaceProvider?
-    ) {
-        recordingService = service
-        this.surfaceProvider = surfaceProvider
-        onServiceBound(recordingService)
-    }
-
-    fun toggleFlash() {
-        if (recordingService == null) return
-        val isEnable = _isFlashOn.value?.data ?: false
-        recordingService?.toggleFlash(!isEnable)//
-        _isFlashOn.value = Resource.Success(!isEnable)
-    }
-
-//    fun zoomCamera(zoomLevel: AppConstants.ZoomMode) {
-//        if (recordingService == null) return
-//        recordingService?.setZoomLevel(getValueZoomLevel(zoomLevel))
-//        _zoomLevel.value = Resource.Success(zoomLevel)
-//    }
-
-
-    fun switchCamera() {
-        if (recordingService == null) return
-        if (_cameraMode.value?.data == CameraSelector.DEFAULT_BACK_CAMERA) {
-            recordingService?.switchCamera()
-            _cameraMode.value = Resource.Success(CameraSelector.DEFAULT_FRONT_CAMERA)
-            return
+    fun initializeCamera(preview: PreviewView, lifecycleOwner: LifecycleOwner) {
+        viewModelScope.launch {
+            _initCamera.value = videoRecordingUseCase.initializeCamera(lifecycleOwner, preview)
+            videoRecordingUseCase.addListenerCameraX(this@MainViewModel)
         }
-        recordingService?.switchCamera()
-        _cameraMode.value = Resource.Success(CameraSelector.DEFAULT_BACK_CAMERA)
     }
 
-    fun setAspectRatio(ratio: Int) {
-        if (recordingService == null) return
-        recordingService?.setAspectRatio(ratio)
-    }
-
-//    private fun getValueZoomLevel(zoomLevel: AppConstants.ZoomMode): Float {
-//        return when (zoomLevel) {
-//            AppConstants.ZoomMode.X1 -> 1f
-//            AppConstants.ZoomMode.X2 -> 2f
-//            AppConstants.ZoomMode.X4 -> 3f
-//            AppConstants.ZoomMode.X5 -> 4f
-//        }
-//    }
-
-    private fun onServiceBound(
-        recordingService: MediaRecordingService?
-    ) {
-        when (recordingService?.getRecordingState()) {
-            MediaRecordingService.RecordingState.RECORDING -> {
-                _isRecording.value = Resource.Success(true)
+    fun switchCamera(lifecycleOwner: LifecycleOwner) {
+        viewModelScope.launch {
+            if (_cameraMode.value?.data == CameraSelector.DEFAULT_BACK_CAMERA) {
+                videoRecordingUseCase.switchCamera(lifecycleOwner)
+                _cameraMode.value = Resource.Success(CameraSelector.DEFAULT_FRONT_CAMERA)
+                return@launch
             }
-
-            MediaRecordingService.RecordingState.STOPPED -> {
-                _isRecording.value = Resource.Success(false)
-            }
-
-            else -> {
-                // no-op
-            }
+            videoRecordingUseCase.switchCamera(lifecycleOwner)
+            _cameraMode.value = Resource.Success(CameraSelector.DEFAULT_BACK_CAMERA)
         }
-
-        recordingService?.addListener(this)
-        recordingService?.bindPreviewUseCase(surfaceProvider)
     }
 
 
     fun onPauseRecordClicked() {
-        when (recordingService?.getRecordingState()) {
-            MediaRecordingService.RecordingState.RECORDING -> {
-                _isRecording.value = Resource.Success(false)
-                recordingService?.stopRecording()
-//                binding.txtDuration.text = "00:00:00"
-            }
+        viewModelScope.launch {
+            when (_statusRecord.value?.data) {
+                CameraXManager.RecordingState.RECORDING -> {
+                    videoRecordingUseCase.stopRecording()
+                    _isRecording.value = Resource.Success(false)
+                    _timeRecord.value = Resource.Success("00:00:00")
+                }
 
-            MediaRecordingService.RecordingState.STOPPED -> {
-                _isRecording.value = Resource.Success(true)
-                recordingService?.startRecording()
-            }
+                CameraXManager.RecordingState.STOPPED -> {
+                    videoRecordingUseCase.startRecording()
+                    _isRecording.value = Resource.Success(true)
+                }
 
-            else -> {
-                // no-op
+                else -> {
+                    // no-op
+                }
             }
         }
     }
 
-    fun onStart() {
+    fun takeAPhoto() {
+        viewModelScope.launch {
+            videoRecordingUseCase.takeAPicture(object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    //
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    //
+                }
+
+            })
+        }
 
     }
 
     fun onStop() {
-        showToast("Stop!!")
-        if (recordingService?.getRecordingState() == MediaRecordingService.RecordingState.STOPPED) {
-            recordingService?.let {
-                ServiceCompat.stopForeground(it, ServiceCompat.STOP_FOREGROUND_REMOVE)
-                recordingService?.stopSelf()
-            }
-        } else {
-            recordingService?.startRunningInForeground()
+        viewModelScope.launch {
+            videoRecordingUseCase.destroyCamera()
+            videoRecordingUseCase.removeListenerCameraX(this@MainViewModel)
         }
-        recordingService?.unbindPreview()
-        recordingService?.removeListener(this)
     }
 
     private fun showToast(message: String) {
@@ -190,44 +160,47 @@ class MainViewModel @Inject constructor(@ApplicationContext private val context:
                 val hoursString = if (hours >= 10) hours.toString() else "0$hours"
                 val minutesString = if (minutes >= 10) minutes.toString() else "0$minutes"
                 val secondsString = if (seconds >= 10) seconds.toString() else "0$seconds"
-//                binding.txtDuration.text = "$hoursString:$minutesString:$secondsString"
+                _timeRecord.value = Resource.Success("$hoursString:$minutesString:$secondsString")
             }
         }
     }
 
     override fun onCameraOpened() {
-
+        //
     }
 
     override fun onRecordingEvent(it: VideoRecordEvent?) {
         when (it) {
             is VideoRecordEvent.Start -> {
-//                binding.btnMute.visibility = View.INVISIBLE
-//                binding.viewRecordPause.setBackgroundResource(R.drawable.ic_crown)
+                //
             }
 
             is VideoRecordEvent.Finalize -> {
-//                recordingService?.isSoundEnabled()?.let { it1 -> setSoundState(it1) }
-//                binding.btnMute.visibility = View.VISIBLE
-//                binding.viewRecordPause.setBackgroundResource(R.drawable.ic_recording)
-//                setUpViewRecording(isRecording = false)
                 _isRecording.value = Resource.Success(false)
                 onNewData(0)
-                val intent = Intent(Intent.ACTION_VIEW, it.outputResults.outputUri)
-                intent.setDataAndType(it.outputResults.outputUri, "video/mp4")
-                context.startActivity(Intent.createChooser(intent, "Open recorded video"))
             }
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        recordingService = null
-        surfaceProvider = null
+    override fun onPinchZoomCamera(scale: Float) {
+        //
     }
 
-    fun bindPreview(surfaceProvider: Preview.SurfaceProvider) {
-        recordingService?.bindPreview(surfaceProvider)
+    override fun onRecordingStateChanged(recordingState: CameraXManager.RecordingState) {
+        _statusRecord.value = Resource.Success(recordingState)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelScope.launch {
+            videoRecordingUseCase.removeListenerCameraX(this@MainViewModel)
+        }
+    }
+
+    fun bindPreview(preview: PreviewView, lifecycleOwner: LifecycleOwner) {
+        viewModelScope.launch {
+            videoRecordingUseCase.bindPreview(preview, lifecycleOwner)
+        }
     }
 
     companion object {
