@@ -192,4 +192,6 @@ Brother Wheel
     <string name="camera_image_error">Dest address error</string>
     <string name="video_recording">Video recording</string>
     <string name="video_recording_in_background">Video recording in background</string>
+    <string name="image_is_saved">Image is saved</string>
+    <string name="error_take_a_shot">Error take a shot</string>
 </resources>

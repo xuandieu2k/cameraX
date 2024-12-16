@@ -20,10 +20,17 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import com.hjq.toast.ToastUtils
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import vn.xdeuhug.camerax.R
 import vn.xdeuhug.camerax.databinding.ActivityMainBinding
@@ -195,6 +202,28 @@ class HomeActivity : AppActivity() {
                 }
             }
         }
+
+        viewModel.isTakeShotDone.observe(this) {
+            when (it) {
+                is Resource.Loading -> {
+                    // Empty
+                }
+
+                is Resource.Success -> {
+                    it.data?.let { value ->
+                        if(value){
+                            showToast(getString(R.string.image_is_saved))
+                            viewModel.setTakePhoto(false)
+                        }
+                    }
+                }
+
+                is Resource.Error -> {
+                    showToast(getString(R.string.error_take_a_shot))
+                    Timber.tag("${this.viewModel::class.java.name} Error").e(it.message)
+                }
+            }
+        }
     }
 
     // #### SETUP VIEW ##########
@@ -218,6 +247,7 @@ class HomeActivity : AppActivity() {
     }
 
     private fun setUpViewRecording(isRecording: Boolean) {
+        binding.btnSwapCamera.visibility = if(isRecording) View.INVISIBLE else View.VISIBLE
         binding.tvRecordingTimer.isVisible = isRecording
         binding.btnStartRecord.setImageResource(if (isRecording) R.drawable.ic_recording else R.drawable.ic_record_off)
     }

@@ -17,6 +17,6 @@
         <androidx.appcompat.widget.AppCompatImageView
             android:layout_width="@dimen/dp_160"
             android:layout_height="@dimen/dp_160"
-            android:src="@drawable/logo_camera" />
+            android:src="@drawable/logo_camerax" />
     </androidx.cardview.widget.CardView>
 </LinearLayout>

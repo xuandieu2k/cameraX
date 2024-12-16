@@ -61,12 +61,20 @@ class HomeViewModel @Inject constructor(@ApplicationContext private val context:
         MutableLiveData(Resource.Success(TIMER_DEFAULT))
     val timerRecord: LiveData<Resource<String>> = _timerRecord
 
+    private val _isTakeShotDone: MutableLiveData<Resource<Boolean>> =
+        MutableLiveData(Resource.Success(false))
+    val isTakeShotDone: LiveData<Resource<Boolean>> = _isTakeShotDone
+
     @SuppressLint("StaticFieldLeak")
     private var recordingService: MediaRecordingService? = null
     private var surfaceProvider: Preview.SurfaceProvider? = null
 
     fun isRecording(): Boolean {
         return _isRecording.value?.data ?: false
+    }
+
+    fun setTakePhoto(isTake:Boolean){
+        _isTakeShotDone.value = Resource.Success(isTake)
     }
 
     fun resetSaveVideo() {
@@ -84,11 +92,19 @@ class HomeViewModel @Inject constructor(@ApplicationContext private val context:
     fun takeAPicture() {
         recordingService?.takeAPicture(object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                showToast("Saved Image")
+                viewModelScope.launch {
+                    withContext(Dispatchers.Main){
+                        _isTakeShotDone.value = Resource.Success(true)
+                    }
+                }
             }
 
             override fun onError(exception: ImageCaptureException) {
-                showToast("Error Take A Shot: $exception")
+                viewModelScope.launch {
+                    withContext(Dispatchers.Main){
+                        _isTakeShotDone.value = Resource.Error(exception.message.toString())
+                    }
+                }
             }
 
         })
